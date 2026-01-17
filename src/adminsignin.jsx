@@ -2,9 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, Link, useParams } from "react-router-dom";
 import { connect } from 'react-redux';
 import Loader from './loader.jsx';
-import { loginUser } from './../auth/actions/useractions';
+import { loginAdmin } from './../auth/actions/useractions';
 
-function Signin({ loginUser }) {
+
+function Signin({ loginAdmin }) {
   const navigate = useNavigate();
   const {userEmail} = useParams();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -49,7 +50,7 @@ function Signin({ loginUser }) {
       return;
     }
 
-    loginUser(formData, navigate, setFieldError, setIsLoading);
+    loginAdmin(formData, navigate, setFieldError, setIsLoading);
   };
 
 
@@ -106,9 +107,9 @@ function Signin({ loginUser }) {
               />
             </div>
             <h1 className="text-3xl font-bold text-[#00bf63] mb-2">
-              PurposeSpace
+              PurposeSpace Admin
             </h1>
-            <p className="text-gray-600">Welcome back to the community.</p>
+            <p className="text-gray-600">Welcome back, Admin.</p>
           </div>
 
           {/* Signin Form */}
@@ -166,31 +167,15 @@ function Signin({ loginUser }) {
             </div>
           </form>
 
-          {/* Social Login */}
-          <div className="mt-8 text-center">
-            <p className="text-gray-600 mb-4">Or continue with</p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-md mx-auto">
-              <button className="flex items-center justify-center gap-2 bg-[#3b5998] text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition text-sm sm:text-base">
-                <i className="fab fa-facebook-f"></i> Facebook
-              </button>
-              <button className="flex items-center justify-center gap-2 bg-[#e1306c] text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition text-sm sm:text-base">
-                <i className="fab fa-instagram"></i> Instagram
-              </button>
-              <button className="flex items-center justify-center gap-2 bg-[#1da1f2] text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition text-sm sm:text-base">
-                <i className="fab fa-twitter"></i> Twitter
-              </button>
-            </div>
-          </div>
-
           {/* Link to Signup */}
           <p className="text-gray-600 text-sm text-center mt-4">
-            Don't have an account?{" "}
-            <Link
-              to="/signup"
+            Don't have an admin account?{" "}
+            <button
+              onClick={() => navigate('/adminsignup')}
               className="text-[#00bf63] font-bold hover:underline cursor-pointer bg-transparent border-none p-0"
             >
-              Sign up
-            </Link>
+              Create Admin Account
+            </button>
           </p>
         </div>
       </div>
@@ -198,4 +183,4 @@ function Signin({ loginUser }) {
   );
 }
 
-export default connect(null, { loginUser })(Signin);
+export default connect(null, { loginAdmin })(Signin);

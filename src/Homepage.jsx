@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from 'axios';
 import PopupMedia from "./popup.jsx";
 
 // Import blog data from blogpage.jsx
@@ -76,6 +77,33 @@ export default function PurposeSpace() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [popupData, setPopupData] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
+  const [recentBlogs, setRecentBlogs] = useState([]);
+
+  // Fetch recent blogs
+  useEffect(() => {
+    const fetchRecentBlogs = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/blog');
+        if (response.data.status === "SUCCESS") {
+          // Sort by createdAt descending (newest first)
+          const sortedBlogs = response.data.data.sort((a, b) => 
+            new Date(b.createdAt) - new Date(a.createdAt)
+          );
+          
+          const formatted = sortedBlogs.map(blog => ({
+            ...blog,
+            time: new Date(blog.createdAt).toLocaleDateString(),
+          }));
+          
+          setRecentBlogs(formatted);
+        }
+      } catch (err) {
+        console.error("Error fetching recent blogs for homepage:", err);
+      }
+    };
+    
+    fetchRecentBlogs();
+  }, []);
 
   // Authentication state - check if user is signed in
   const [isSignedIn, setIsSignedIn] = useState(false);
@@ -96,13 +124,17 @@ export default function PurposeSpace() {
         try {
           const userInfo = userData ? JSON.parse(userData) : null;
           if (userInfo && userInfo.name) {
-            // Extract first name from full name
-            const firstName = userInfo.name.split(' ')[0];
+            // Extract second name from full name (or keep first if only one name exists)
+            const names = userInfo.name.trim().split(/\s+/);
+            const displayName = names.length > 1 ? names[1] : names[0];
+            
             setCurrentUser({
-              firstName: firstName,
+              _id: userInfo._id,
+              firstName: displayName,
               fullName: userInfo.name,
               email: userInfo.email,
-              avatar: userInfo.avatar || null // Will use default avatar if none provided
+              avatar: userInfo.avatar || null, // Will use default avatar if none provided
+              role: userInfo.role || 'user'
             });
           }
         } catch (error) {
@@ -128,11 +160,11 @@ export default function PurposeSpace() {
     };
   }, []);
 
-  // Get the latest 3 blog posts from blogpage.jsx data
-  const allBlogData = [...initialBlogs, ...moreBlogs.slice(0, 1)]; // Take 2 from initial + 1 from more = 3 total
+  // Get the latest 3 blog posts (prioritize fetched blogs, then static)
+  const allBlogData = [...recentBlogs, ...initialBlogs, ...moreBlogs].slice(0, 3);
   const blogPosts = transformBlogData(allBlogData);
 
-  const spotlightStories = [
+  const [spotlightStories, setSpotlightStories] = useState([
     {
       type: 'picture',
       media: 'images/precious.jpeg',
@@ -163,9 +195,18 @@ export default function PurposeSpace() {
       caption: 'Experience the innovative solutions our tech incubator participants are creating. These young minds are solving real-world problems and making technology accessible to everyone.',
       readTime: '8 min watch'
     }
-  ];
-
-  const successStories = [
+  ]);
+  const [showStoryModal, setShowStoryModal] = useState(false);
+  const [newStory, setNewStory] = useState({
+    title: '',
+    caption: '',
+    type: 'picture',
+    media: '',
+    readTime: ''
+  });
+  const [isUploading, setIsUploading] = useState(false);
+  const [shareModal, setShareModal] = useState({ isOpen: false, story: null });
+  const [successStories, setSuccessStories] = useState([
     {
       id: 1,
       image: "images/precious.jpeg",
@@ -196,9 +237,8 @@ export default function PurposeSpace() {
       mobileStory: "Purpose Space's scholarship enabled my education journey. I established a girls' school serving 800+ students with 95% graduation rate and trained 100+ teachers, transforming educational opportunities in northern Nigeria.",
       impact: "800+ students educated • 95% graduation rate • 100+ teachers trained"
     }
-  ];
-
-  const menOfExcellence = [
+  ]);
+  const [menOfExcellence, setMenOfExcellence] = useState([
     {
       id: 1,
       image: "images/teampic.png",
@@ -226,7 +266,268 @@ export default function PurposeSpace() {
       achievement: "Developed drought-resistant crop varieties that have increased food production by 60% in arid regions. His research has helped feed over 1 million people across the Sahel.",
       impact: "1M+ people fed • 60% yield increase • 20+ crop varieties developed"
     }
-  ];
+  ]);
+  const [showSuccessStoryModal, setShowSuccessStoryModal] = useState(false);
+  const [showExcellenceModal, setShowExcellenceModal] = useState(false);
+  const [newSuccessStory, setNewSuccessStory] = useState({
+    name: '', title: '', location: '', story: '', mobileStory: '', impact: '', image: ''
+  });
+  const [newExcellence, setNewExcellence] = useState({
+    name: '', title: '', location: '', achievement: '', impact: '', image: ''
+  });
+
+
+
+  const closeShareModal = () => {
+    setShareModal({ isOpen: false, story: null });
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text).then(() => {
+      alert("Link copied to clipboard!");
+    });
+  };
+
+  // Fetch dynamic stories
+  useEffect(() => {
+    // Fetch Life Changing Stories
+    axios.get('http://localhost:5000/lifeChangingStory')
+      .then(res => {
+        if (res.data.status === "SUCCESS") {
+           setSpotlightStories(prev => {
+             const staticStories = [
+                {
+                  type: 'picture',
+                  media: 'images/precious.jpeg',
+                  title: 'Community Transformation',
+                  caption: 'Meet Sarah, who transformed her entire neighborhood through community gardening initiatives. Her story shows how one person\'s vision can create lasting change and bring people together.',
+                  readTime: '4 min read'
+                },
+                {
+                  type: 'video',
+                  media: 'images/precious.jpeg',
+                  poster: 'images/precious.jpeg',
+                  title: 'From Struggle to Success',
+                  caption: 'Watch John\'s incredible journey from unemployment to becoming a successful entrepreneur. His determination and the support from our community programs made all the difference.',
+                  readTime: '6 min watch'
+                },
+                {
+                  type: 'picture',
+                  media: 'images/precious.jpeg',
+                  title: 'Educational Impact',
+                  caption: 'Discover how our scholarship program helped Maria become the first in her family to graduate from university. Her achievement is now inspiring others in her community to pursue higher education.',
+                  readTime: '5 min read'
+                },
+                {
+                  type: 'video',
+                  media: 'images/vision2.jpg',
+                  poster: 'images/precious.jpeg',
+                  title: 'Innovation in Action',
+                  caption: 'Experience the innovative solutions our tech incubator participants are creating. These young minds are solving real-world problems and making technology accessible to everyone.',
+                  readTime: '8 min watch'
+                }
+             ];
+             return [...res.data.data, ...staticStories];
+           });
+        }
+      })
+      .catch(err => console.error("Error fetching stories:", err));
+
+      // Fetch Success Stories
+      axios.get('http://localhost:5000/successStory')
+      .then(res => {
+        if (res.data.status === "SUCCESS") {
+           setSuccessStories(prev => [...res.data.data, ...prev]);
+        }
+      })
+      .catch(err => console.error("Error fetching success stories:", err));
+
+      // Fetch Men of Excellence
+      axios.get('http://localhost:5000/menOfExcellence')
+      .then(res => {
+        if (res.data.status === "SUCCESS") {
+           setMenOfExcellence(prev => [...res.data.data, ...prev]);
+        }
+      })
+      .catch(err => console.error("Error fetching men of excellence:", err));
+  }, []);
+
+  const handleSuccessStoryImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewSuccessStory(prev => ({ ...prev, image: reader.result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleExcellenceImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewExcellence(prev => ({ ...prev, image: reader.result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAddSuccessStory = async (e) => {
+    e.preventDefault();
+    if (!newSuccessStory.name || !newSuccessStory.title || !newSuccessStory.image) {
+      alert("Please fill in all required fields");
+      return;
+    }
+    setIsUploading(true);
+    try {
+      const userData = JSON.parse(localStorage.getItem('userData'));
+      const response = await axios.post('http://localhost:5000/successStory', {
+        ...newSuccessStory,
+        userId: userData._id
+      });
+      if (response.data.status === "SUCCESS") {
+        setSuccessStories(prev => [response.data.data, ...prev]);
+        setShowSuccessStoryModal(false);
+        setNewSuccessStory({ name: '', title: '', location: '', story: '', mobileStory: '', impact: '', image: '' });
+      } else {
+        alert(response.data.message);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error creating story");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDeleteSuccessStory = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this story?")) return;
+    try {
+      const userData = JSON.parse(localStorage.getItem('userData'));
+      const response = await axios.delete(`http://localhost:5000/successStory/${id}`, {
+        data: { userId: userData._id }
+      });
+      if (response.data.status === "SUCCESS") {
+        setSuccessStories(prev => prev.filter(s => s._id !== id));
+      } else {
+        alert(response.data.message);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error deleting story");
+    }
+  };
+
+  const handleAddExcellence = async (e) => {
+    e.preventDefault();
+    if (!newExcellence.name || !newExcellence.title || !newExcellence.image) {
+      alert("Please fill in all required fields");
+      return;
+    }
+    setIsUploading(true);
+    try {
+      const userData = JSON.parse(localStorage.getItem('userData'));
+      const response = await axios.post('http://localhost:5000/menOfExcellence', {
+        ...newExcellence,
+        userId: userData._id
+      });
+      if (response.data.status === "SUCCESS") {
+        setMenOfExcellence(prev => [response.data.data, ...prev]);
+        setShowExcellenceModal(false);
+        setNewExcellence({ name: '', title: '', location: '', achievement: '', impact: '', image: '' });
+      } else {
+        alert(response.data.message);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error creating item");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDeleteExcellence = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this item?")) return;
+    try {
+      const userData = JSON.parse(localStorage.getItem('userData'));
+      const response = await axios.delete(`http://localhost:5000/menOfExcellence/${id}`, {
+        data: { userId: userData._id }
+      });
+      if (response.data.status === "SUCCESS") {
+        setMenOfExcellence(prev => prev.filter(m => m._id !== id));
+      } else {
+        alert(response.data.message);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error deleting item");
+    }
+  };
+
+  const handleStoryImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewStory(prev => ({ ...prev, media: reader.result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAddStory = async (e) => {
+    e.preventDefault();
+    if (!newStory.title || !newStory.caption || !newStory.media) {
+      alert("Please fill in all fields");
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const userData = JSON.parse(localStorage.getItem('userData'));
+      const response = await axios.post('http://localhost:5000/lifeChangingStory', {
+        ...newStory,
+        userId: userData._id
+      });
+
+      if (response.data.status === "SUCCESS") {
+        setSpotlightStories(prev => [response.data.data, ...prev]);
+        setShowStoryModal(false);
+        setNewStory({ title: '', caption: '', type: 'picture', media: '', readTime: '' });
+      } else {
+        alert(response.data.message);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error creating story");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDeleteStory = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this story?")) return;
+    
+    try {
+      const userData = JSON.parse(localStorage.getItem('userData'));
+      const response = await axios.delete(`http://localhost:5000/lifeChangingStory/${id}`, {
+        data: { userId: userData._id }
+      });
+
+      if (response.data.status === "SUCCESS") {
+        setSpotlightStories(prev => prev.filter(story => story._id !== id));
+      } else {
+        alert(response.data.message);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error deleting story");
+    }
+  };
+
+
 
   // Intersection Observer for Vision & Mission animations
   useEffect(() => {
@@ -275,6 +576,31 @@ export default function PurposeSpace() {
     }, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  // Handle sharing
+  const handleShare = async (content) => {
+    const shareData = {
+      title: content.title || content.name || 'Purpose Space Story',
+      text: content.caption || content.story || content.achievement || content.description || 'Check out this inspiring story!',
+      url: window.location.href,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        console.error('Error sharing:', err);
+      }
+    } else {
+      // Fallback for browsers that don't support Web Share API
+      try {
+        await navigator.clipboard.writeText(`${shareData.title}\n${shareData.text}\n${shareData.url}`);
+        alert('Link copied to clipboard!');
+      } catch (err) {
+        alert('Sharing is not supported on this browser.');
+      }
+    }
+  };
 
   // Handle popup opening
   const openPopup = (story, type = "image") => {
@@ -366,8 +692,14 @@ export default function PurposeSpace() {
             {["Home", "About", "Blog", "Spotlights", "Career", "Contact"].map((link) => (
               <a
                 key={link}
-                href={`#${link.toLowerCase()}`}
-                className="relative font-semibold text-white hover:text-green-100 transition-all duration-300 group py-2"
+                href={link === "About" ? "/about" : `#${link.toLowerCase()}`}
+                onClick={(e) => {
+                  if (link === "About") {
+                    e.preventDefault();
+                    navigate("/about");
+                  }
+                }}
+                className="relative font-semibold text-white hover:text-green-100 transition-all duration-300 group py-2 cursor-pointer"
               >
                 {link}
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-green-400 to-emerald-400 group-hover:w-full transition-all duration-300"></span>
@@ -409,7 +741,8 @@ export default function PurposeSpace() {
                       Welcome back,
                     </span>
                     <span className="text-green-200 font-bold text-base leading-tight">
-                      {currentUser?.firstName || 'User'}!
+                      {currentUser?.role === 'admin' ? 'Admin ' : ''}
+                      {currentUser?.fullName?.split(/\s+/)[1] || currentUser?.firstName || 'User'}!
                     </span>
                   </div>
 
@@ -474,9 +807,15 @@ export default function PurposeSpace() {
                 {["Home", "About", "Blog", "Spotlights", "Career", "Contact"].map((link) => (
                   <a
                     key={link}
-                    href={`#${link.toLowerCase()}`}
-                    className="block px-4 py-3 text-gray-200 hover:text-white hover:bg-gradient-to-r hover:from-green-500/20 hover:to-emerald-500/20 rounded-xl transition-all duration-200 font-medium"
-                    onClick={() => setIsMobileMenuOpen(false)}
+                    href={link === "About" ? "/about" : `#${link.toLowerCase()}`}
+                    className="block px-4 py-3 text-gray-200 hover:text-white hover:bg-gradient-to-r hover:from-green-500/20 hover:to-emerald-500/20 rounded-xl transition-all duration-200 font-medium cursor-pointer"
+                    onClick={(e) => {
+                      if (link === "About") {
+                        e.preventDefault();
+                        navigate("/about");
+                      }
+                      setIsMobileMenuOpen(false);
+                    }}
                   >
                     {link}
                   </a>
@@ -518,7 +857,8 @@ export default function PurposeSpace() {
                         Welcome back,
                       </span>
                       <span className="text-green-300 font-bold text-sm leading-tight">
-                        {currentUser?.firstName || 'User'}!
+                        {currentUser?.role === 'admin' ? 'Admin ' : ''}
+                        {currentUser?.fullName?.split(/\s+/)[1] || currentUser?.firstName || 'User'}!
                       </span>
                     </div>
 
@@ -1112,7 +1452,20 @@ export default function PurposeSpace() {
       {/* Spotlights */}
       <section id="spotlights" className="py-12 sm:py-16 lg:py-20 bg-gradient-to-br from-gray-50 to-green-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-green-500 text-center mb-6 sm:mb-8">Life changing stories</h2>
+          <div className="flex items-center justify-center gap-4 mb-6 sm:mb-8 relative">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-green-500 text-center">Life changing stories</h2>
+            {currentUser && currentUser.role === 'admin' && (
+              <button 
+                onClick={() => setShowStoryModal(true)}
+                className="bg-green-600 text-white p-2 rounded-full hover:bg-green-700 transition-colors shadow-lg"
+                title="Add Story"
+              >
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              </button>
+            )}
+          </div>
 
           {/* Scrollable Cards with Arrows */}
           <div className="relative">
@@ -1143,7 +1496,18 @@ export default function PurposeSpace() {
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
               {spotlightStories.map((story, idx) => (
-                <div key={idx} className="relative bg-white rounded-xl overflow-hidden h-[350px] sm:h-[400px] w-[250px] sm:w-[300px] flex-shrink-0 flex flex-col justify-end text-white shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+                <div key={idx} className="relative bg-white rounded-xl overflow-hidden h-[350px] sm:h-[400px] w-[250px] sm:w-[300px] flex-shrink-0 flex flex-col justify-end text-white shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 group">
+                  {currentUser && story._id && (currentUser.role === 'admin' || currentUser._id === story.userId) && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDeleteStory(story._id); }}
+                      className="absolute top-2 right-2 z-20 bg-red-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-red-600"
+                      title="Delete Story"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  )}
                   {/* Media Content */}
                   {story.type === 'video' ? (
                     <video
@@ -1177,15 +1541,26 @@ export default function PurposeSpace() {
                     <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3">{story.title}</h3>
                     <p className="text-xs sm:text-sm mb-3 sm:mb-4 text-white/90 leading-relaxed line-clamp-3">{story.caption}</p>
                     <div className="flex items-center justify-between">
-                      <button
-                        onClick={() => openPopup(story, story.type)}
-                        className="inline-flex items-center px-3 sm:px-4 py-2 bg-green-500 hover:bg-green-600 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 hover:scale-105"
-                      >
-                        <span>Read More</span>
-                        <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => openPopup(story, story.type)}
+                          className="inline-flex items-center px-3 sm:px-4 py-2 bg-green-500 hover:bg-green-600 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 hover:scale-105"
+                        >
+                          <span>Read More</span>
+                          <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleShare(story); }}
+                          className="inline-flex items-center p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-all duration-300 hover:scale-105 backdrop-blur-sm"
+                          title="Share Story"
+                        >
+                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                          </svg>
+                        </button>
+                      </div>
                       <div className="text-xs text-white/70">
                         {story.readTime}
                       </div>
@@ -1202,10 +1577,25 @@ export default function PurposeSpace() {
       {/* More Success Stories */}
       <section className="py-12 sm:py-16 lg:py-20 bg-gradient-to-br from-blue-50 to-purple-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-green-500 text-center mb-8 sm:mb-12 animate-fade-in-up">
-            More Success Stories
+          <div className="text-center mb-8 sm:mb-12 animate-fade-in-up relative">
+            <div className="flex items-center justify-center gap-4">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-green-500 text-center">
+                More Success Stories
+              </h2>
+              {currentUser && currentUser.role === 'admin' && (
+                <button 
+                  onClick={() => setShowSuccessStoryModal(true)}
+                  className="bg-green-600 text-white p-2 rounded-full hover:bg-green-700 transition-colors shadow-lg sm:ml-4"
+                  title="Add Success Story"
+                >
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                </button>
+              )}
+            </div>
             <div className="w-16 sm:w-24 h-1 bg-gradient-to-r from-green-400 to-green-600 mx-auto mt-3 sm:mt-4 rounded-full animate-pulse"></div>
-          </h2>
+          </div>
 
           {/* Success Stories Carousel */}
           <div className="relative">
@@ -1236,8 +1626,19 @@ export default function PurposeSpace() {
                 style={{ transform: `translateX(-${successStorySlide * 100}%)` }}
               >
                 {successStories.map((story, idx) => (
-                  <div key={story.id} className="w-full flex-shrink-0 animate-slide-in">
+                  <div key={story.id} className="w-full flex-shrink-0 animate-slide-in relative">
                     <div className="bg-gradient-to-br from-white via-gray-50 to-green-50 rounded-2xl shadow-2xl overflow-hidden border border-gray-100 hover:shadow-3xl hover:scale-[1.02] transition-all duration-500 hover:border-green-300 group">
+                      {currentUser && story._id && (currentUser.role === 'admin' || currentUser._id === story.userId) && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDeleteSuccessStory(story._id); }}
+                          className="absolute top-2 right-2 z-20 bg-red-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-red-600"
+                          title="Delete Story"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      )}
                       <div className="p-4 sm:p-6 md:p-8 lg:p-12">
                         {/* Profile Section */}
                         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 lg:gap-8 mb-6 sm:mb-8 lg:mb-10">
@@ -1295,7 +1696,10 @@ export default function PurposeSpace() {
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                 </svg>
                               </button>
-                              <button className="inline-flex items-center px-4 sm:px-6 lg:px-8 py-3 sm:py-4 border-2 border-green-500 text-green-600 hover:bg-green-500 hover:text-white text-sm sm:text-base font-bold rounded-xl transition-all duration-300 hover:scale-105 group-hover:border-green-400 w-full sm:w-auto">
+                              <button 
+                                onClick={() => handleShare(story)}
+                                className="inline-flex items-center px-4 sm:px-6 lg:px-8 py-3 sm:py-4 border-2 border-green-500 text-green-600 hover:bg-green-500 hover:text-white text-sm sm:text-base font-bold rounded-xl transition-all duration-300 hover:scale-105 group-hover:border-green-400 w-full sm:w-auto"
+                              >
                                 <span>Share Story</span>
                                 <svg className="w-4 h-4 sm:w-5 sm:h-5 ml-2 group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
@@ -1349,9 +1753,22 @@ export default function PurposeSpace() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           {/* Section Header */}
           <div className="text-center mb-12 sm:mb-16 lg:mb-20">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 bg-clip-text text-transparent mb-4 sm:mb-6">
-              Men of Excellence
-            </h2>
+            <div className="flex items-center justify-center gap-4 mb-4 sm:mb-6">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 bg-clip-text text-transparent">
+                Men of Excellence
+              </h2>
+              {currentUser && currentUser.role === 'admin' && (
+                <button 
+                  onClick={() => setShowExcellenceModal(true)}
+                  className="bg-emerald-600 text-white p-2 rounded-full hover:bg-emerald-700 transition-colors shadow-lg sm:ml-4"
+                  title="Add Excellence Story"
+                >
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                </button>
+              )}
+            </div>
             <div className="w-20 sm:w-28 h-1 bg-gradient-to-r from-emerald-400 to-green-600 mx-auto mb-4 sm:mb-6 rounded-full"></div>
             <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
               Celebrating exceptional men who have made extraordinary contributions to their communities and fields of expertise.
@@ -1371,6 +1788,17 @@ export default function PurposeSpace() {
                     className="w-full flex-shrink-0 px-2"
                   >
                     <div className="group relative bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-green-100/50 mx-auto max-w-sm">
+                      {currentUser && person._id && (currentUser.role === 'admin' || currentUser._id === person.userId) && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDeleteExcellence(person._id); }}
+                          className="absolute top-2 right-2 z-20 bg-red-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-red-600"
+                          title="Delete Story"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      )}
                       {/* Gradient Overlay */}
                       <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-green-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
@@ -1489,6 +1917,17 @@ export default function PurposeSpace() {
                 className="group relative bg-white/80 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 border border-green-100/50 hover:border-green-200"
                 style={{ animationDelay: `${index * 0.2}s` }}
               >
+                {currentUser && person._id && (currentUser.role === 'admin' || currentUser._id === person.userId) && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDeleteExcellence(person._id); }}
+                    className="absolute top-4 right-4 z-30 bg-red-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-red-600"
+                    title="Delete Story"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                )}
                 {/* Gradient Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-green-500/5 rounded-2xl sm:rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
@@ -1823,6 +2262,354 @@ export default function PurposeSpace() {
         </div>
       </footer>
 
+      {/* Story Modal */}
+      {showStoryModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-fade-in-up">
+            <div className="flex justify-between items-center p-4 sm:p-6 border-b border-gray-100">
+              <h3 className="text-xl font-bold text-gray-800">Add New Story</h3>
+              <button 
+                onClick={() => setShowStoryModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <form onSubmit={handleAddStory} className="p-4 sm:p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                <input
+                  type="text"
+                  required
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
+                  value={newStory.title}
+                  onChange={e => setNewStory({...newStory, title: e.target.value})}
+                  placeholder="Story title..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Caption</label>
+                <textarea
+                  required
+                  rows="3"
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all resize-none"
+                  value={newStory.caption}
+                  onChange={e => setNewStory({...newStory, caption: e.target.value})}
+                  placeholder="Story description..."
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                  <select
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+                    value={newStory.type}
+                    onChange={e => setNewStory({...newStory, type: e.target.value})}
+                  >
+                    <option value="picture">Picture</option>
+                    <option value="video">Video</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Read/Watch Time</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+                    value={newStory.readTime}
+                    onChange={e => setNewStory({...newStory, readTime: e.target.value})}
+                    placeholder="e.g. 5 min read"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Media</label>
+                <div className="flex items-center justify-center w-full">
+                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-green-300 border-dashed rounded-lg cursor-pointer bg-green-50 hover:bg-green-100 transition-colors">
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      {newStory.media ? (
+                         newStory.type === 'video' ? (
+                            <div className="text-green-600 font-medium">Video selected</div>
+                         ) : (
+                            <img src={newStory.media} alt="Preview" className="h-28 object-contain" />
+                         )
+                      ) : (
+                        <>
+                          <svg className="w-8 h-8 mb-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <p className="text-sm text-gray-500"><span className="font-semibold">Click to upload</span></p>
+                        </>
+                      )}
+                    </div>
+                    <input type="file" className="hidden" accept="image/*,video/*" onChange={handleStoryImageUpload} />
+                  </label>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isUploading}
+                className="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center"
+              >
+                {isUploading ? (
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                ) : (
+                  'Publish Story'
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Share Modal */}
+      {shareModal.isOpen && shareModal.story && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={closeShareModal}>
+          <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl animate-fade-in-up" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center p-4 border-b border-gray-100">
+              <h3 className="text-lg font-bold text-gray-800">Share Story</h3>
+              <button onClick={closeShareModal} className="text-gray-400 hover:text-gray-600">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <div className="p-6 grid grid-cols-4 gap-4">
+              <button 
+                onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}&quote=${encodeURIComponent(shareModal.story.title)}`, '_blank')}
+                className="flex flex-col items-center gap-2 group"
+              >
+                <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                </div>
+                <span className="text-xs text-gray-600 group-hover:text-blue-600">Facebook</span>
+              </button>
+              
+              <button 
+                onClick={() => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareModal.story.title)}&url=${encodeURIComponent(window.location.href)}`, '_blank')}
+                className="flex flex-col items-center gap-2 group"
+              >
+                <div className="w-12 h-12 rounded-full bg-sky-100 text-sky-500 flex items-center justify-center group-hover:bg-sky-500 group-hover:text-white transition-colors">
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/></svg>
+                </div>
+                <span className="text-xs text-gray-600 group-hover:text-sky-500">Twitter</span>
+              </button>
+
+              <button 
+                onClick={() => window.open(`https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(window.location.href)}&title=${encodeURIComponent(shareModal.story.title)}`, '_blank')}
+                className="flex flex-col items-center gap-2 group"
+              >
+                <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center group-hover:bg-blue-700 group-hover:text-white transition-colors">
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                </div>
+                <span className="text-xs text-gray-600 group-hover:text-blue-700">LinkedIn</span>
+              </button>
+
+              <button 
+                onClick={() => copyToClipboard(window.location.href)}
+                className="flex flex-col items-center gap-2 group"
+              >
+                <div className="w-12 h-12 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center group-hover:bg-gray-600 group-hover:text-white transition-colors">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
+                </div>
+                <span className="text-xs text-gray-600 group-hover:text-gray-600">Copy Link</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Story Modal */}
+      {showSuccessStoryModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setShowSuccessStoryModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in-up" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center p-4 border-b border-gray-100">
+              <h3 className="text-xl font-bold text-gray-800">Add Success Story</h3>
+              <button onClick={() => setShowSuccessStoryModal(false)} className="text-gray-400 hover:text-gray-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <form onSubmit={handleAddSuccessStory} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                <input
+                  type="text"
+                  value={newSuccessStory.name}
+                  onChange={e => setNewSuccessStory({...newSuccessStory, name: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Title/Profession</label>
+                <input
+                  type="text"
+                  value={newSuccessStory.title}
+                  onChange={e => setNewSuccessStory({...newSuccessStory, title: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                <input
+                  type="text"
+                  value={newSuccessStory.location}
+                  onChange={e => setNewSuccessStory({...newSuccessStory, location: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Full Story</label>
+                <textarea
+                  value={newSuccessStory.story}
+                  onChange={e => setNewSuccessStory({...newSuccessStory, story: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 h-24"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Short Story (Mobile)</label>
+                <textarea
+                  value={newSuccessStory.mobileStory}
+                  onChange={e => setNewSuccessStory({...newSuccessStory, mobileStory: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 h-16"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Impact (e.g. 5,000+ lives touched)</label>
+                <input
+                  type="text"
+                  value={newSuccessStory.impact}
+                  onChange={e => setNewSuccessStory({...newSuccessStory, impact: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
+                <div className="flex items-center justify-center w-full">
+                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      {newSuccessStory.image ? (
+                         <img src={newSuccessStory.image} alt="Preview" className="h-28 object-contain" />
+                      ) : (
+                        <>
+                          <svg className="w-8 h-8 mb-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+                          <p className="text-sm text-gray-500">Click to upload image</p>
+                        </>
+                      )}
+                    </div>
+                    <input type="file" className="hidden" accept="image/*" onChange={handleSuccessStoryImageUpload} />
+                  </label>
+                </div>
+              </div>
+              <button
+                type="submit"
+                disabled={isUploading}
+                className="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+              >
+                {isUploading ? 'Publishing...' : 'Publish Story'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Men of Excellence Modal */}
+      {showExcellenceModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setShowExcellenceModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in-up" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center p-4 border-b border-gray-100">
+              <h3 className="text-xl font-bold text-gray-800">Add Man of Excellence</h3>
+              <button onClick={() => setShowExcellenceModal(false)} className="text-gray-400 hover:text-gray-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <form onSubmit={handleAddExcellence} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                <input
+                  type="text"
+                  value={newExcellence.name}
+                  onChange={e => setNewExcellence({...newExcellence, name: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Title/Profession</label>
+                <input
+                  type="text"
+                  value={newExcellence.title}
+                  onChange={e => setNewExcellence({...newExcellence, title: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                <input
+                  type="text"
+                  value={newExcellence.location}
+                  onChange={e => setNewExcellence({...newExcellence, location: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Achievement</label>
+                <textarea
+                  value={newExcellence.achievement}
+                  onChange={e => setNewExcellence({...newExcellence, achievement: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 h-24"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Impact</label>
+                <input
+                  type="text"
+                  value={newExcellence.impact}
+                  onChange={e => setNewExcellence({...newExcellence, impact: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
+                <div className="flex items-center justify-center w-full">
+                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      {newExcellence.image ? (
+                         <img src={newExcellence.image} alt="Preview" className="h-28 object-contain" />
+                      ) : (
+                        <>
+                          <svg className="w-8 h-8 mb-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+                          <p className="text-sm text-gray-500">Click to upload image</p>
+                        </>
+                      )}
+                    </div>
+                    <input type="file" className="hidden" accept="image/*" onChange={handleExcellenceImageUpload} />
+                  </label>
+                </div>
+              </div>
+              <button
+                type="submit"
+                disabled={isUploading}
+                className="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+              >
+                {isUploading ? 'Publishing...' : 'Publish Item'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Popup Component */}
       {showPopup && popupData && (
         <PopupMedia
@@ -1833,6 +2620,7 @@ export default function PurposeSpace() {
           imageUrl={popupData.imageUrl}
           videoUrl={popupData.videoUrl}
           onClose={closePopup}
+          onShare={() => handleShare(popupData)}
         />
       )}
     </div>

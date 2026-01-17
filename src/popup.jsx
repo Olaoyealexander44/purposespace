@@ -8,6 +8,7 @@ export default function PopupMedia({
     imageUrl = "https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d?w=1600&auto=format&fit=crop&q=80",
     videoUrl = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
     onClose,
+    onShare,
 }) {
     const [open, setOpen] = useState(true);
     const videoRef = useRef(null);
@@ -149,7 +150,9 @@ export default function PopupMedia({
                                             Take Action
                                         </span>
                                     </button>
-                                    <button className="flex-1 px-6 py-3 sm:py-2.5 rounded-xl 
+                                    <button 
+                                        onClick={onShare}
+                                        className="flex-1 px-6 py-3 sm:py-2.5 rounded-xl 
                                                      bg-white hover:bg-green-50 
                                                      border-2 border-green-200 hover:border-green-300
                                                      text-green-700 hover:text-green-800 font-medium

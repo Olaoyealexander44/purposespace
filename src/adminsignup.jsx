@@ -3,18 +3,19 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { connect } from 'react-redux';
 import Loader from './loader.jsx';
-import { signupUser } from './../auth/actions/useractions';
+import { signupAdmin } from './../auth/actions/useractions';
 
 const localUrl = 'http://localhost:3000/';
 const currentUrl = localUrl;
 
-function Signup({ signupUser }) {
+function Signup({ signupAdmin }) {
   const navigate = useNavigate();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    password: ''
+    password: '',
+    adminCode: ''
   });
   const [isLoading, setIsLoading] = useState(false);
   const [fieldError, setFieldError] = useState("");
@@ -48,8 +49,8 @@ function Signup({ signupUser }) {
     setFieldError("");
 
     // Validate form data
-    if (!formData.name || !formData.email || !formData.password) {
-      alert('Please fill in all fields');
+    if (!formData.name || !formData.email || !formData.password || !formData.adminCode) {
+      alert('Please fill in all fields including Admin Code');
       setIsLoading(false);
       return;
     }
@@ -60,11 +61,11 @@ function Signup({ signupUser }) {
       return;
     }
 
-    signupUser(formData, navigate, setFieldError, setIsLoading);
+    signupAdmin(formData, navigate, setFieldError, setIsLoading);
   };
 
   const handleSignInClick = () => {
-    navigate('/signin');
+    navigate('/adminsignin');
   };
 
   return (
@@ -111,10 +112,10 @@ function Signup({ signupUser }) {
               />
             </div>
             <h1 className="text-3xl font-bold text-[#00bf63] mb-2">
-              PurposeSpace
+              PurposeSpace Admin
             </h1>
             <p className="text-gray-600">
-              Join our community of inspiring stories and blogs.
+              Create an administrative account to manage the platform.
             </p>
           </div>
 
@@ -158,6 +159,63 @@ function Signup({ signupUser }) {
 
             <div className="flex flex-col">
               <label
+                htmlFor="adminCode"
+                className="font-semibold mb-1 text-gray-800 text-left"
+              >
+                Admin Code
+              </label>
+              <input
+                type="password"
+                id="adminCode"
+                name="adminCode"
+                value={formData.adminCode}
+                onChange={handleInputChange}
+                placeholder="Enter Admin Secret Code"
+                required
+                className="p-3 border border-gray-300 rounded-lg outline-none focus:border-[#00bf63] focus:shadow-[0_0_6px_rgba(0,191,99,0.3)]"
+              />
+            </div>
+
+            <div className="flex flex-col">
+              <label
+                htmlFor="adminCode"
+                className="font-semibold mb-1 text-gray-800 text-left"
+              >
+                Admin Code
+              </label>
+              <input
+                type="password"
+                id="adminCode"
+                name="adminCode"
+                value={formData.adminCode}
+                onChange={handleInputChange}
+                placeholder="Enter Admin Secret Code"
+                required
+                className="p-3 border border-gray-300 rounded-lg outline-none focus:border-[#00bf63] focus:shadow-[0_0_6px_rgba(0,191,99,0.3)]"
+              />
+            </div>
+
+            <div className="flex flex-col">
+              <label
+                htmlFor="adminCode"
+                className="font-semibold mb-1 text-gray-800 text-left"
+              >
+                Admin Code
+              </label>
+              <input
+                type="password"
+                id="adminCode"
+                name="adminCode"
+                value={formData.adminCode}
+                onChange={handleInputChange}
+                placeholder="Enter Admin Secret Code"
+                required
+                className="p-3 border border-gray-300 rounded-lg outline-none focus:border-[#00bf63] focus:shadow-[0_0_6px_rgba(0,191,99,0.3)]"
+              />
+            </div>
+
+            <div className="flex flex-col">
+              <label
                 htmlFor="password"
                 className="font-semibold mb-1 text-gray-800 text-left"
               >
@@ -181,7 +239,7 @@ function Signup({ signupUser }) {
               disabled={isLoading}
               className="bg-[#00bf63] text-white font-bold py-3 rounded-lg transition duration-300 hover:bg-[#00994f] hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center"
             >
-              {isLoading ? <Loader height="30" width="30" className="" /> : 'Sign Up'}
+              {isLoading ? <Loader height="30" width="30" className="" /> : 'Create Admin Account'}
             </button>
           </form>
 
@@ -209,12 +267,12 @@ function Signup({ signupUser }) {
 
           {/* Sign in link */}
           <p className="text-gray-600 text-sm text-center mt-4">
-            Already have an account?{" "}
+            Already have an admin account?{" "}
             <button
               onClick={handleSignInClick}
               className="text-[#00bf63] font-bold hover:underline cursor-pointer bg-transparent border-none p-0"
             >
-              Sign in
+              Admin Sign In
             </button>
           </p>
         </div>
@@ -223,5 +281,5 @@ function Signup({ signupUser }) {
   );
 }
 
-export default connect(null, { signupUser })(Signup);
+export default connect(null, { signupAdmin })(Signup);
 
