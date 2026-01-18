@@ -35,7 +35,7 @@ export default function BlogFeed() {
     return saved ? JSON.parse(saved) : {
       name: "Olaoye Alexander",
       title: "Nursing Officer & Blogger",
-      image: "/images/vision.jpeg"
+      image: "images/vision.jpeg"
     };
   });
   const [showProfileEdit, setShowProfileEdit] = useState(false);
@@ -56,7 +56,7 @@ export default function BlogFeed() {
 
   const fetchBlogs = () => {
     setLoading(true);
-    axios.get('http://localhost:5000/blog')
+    axios.get('https://purposespace-backend-b9ecfc575955.herokuapp.com/blog')
       .then(response => {
         if (response.data.status === "SUCCESS") {
           const formattedBlogs = response.data.data.map(blog => ({
@@ -198,7 +198,7 @@ export default function BlogFeed() {
 
     if (isEditing && currentEditId) {
         // Update existing blog
-        axios.put(`http://localhost:5000/blog/${currentEditId}`, blogData)
+        axios.put(`https://purposespace-backend-b9ecfc575955.herokuapp.com/blog/${currentEditId}`, blogData)
             .then(response => {
                 if (response.data.status === "SUCCESS") {
                     setBlogs(prev => prev.map(b => b._id === currentEditId ? { ...b, ...response.data.data, time: new Date(response.data.data.createdAt).toLocaleDateString() } : b));
@@ -214,7 +214,7 @@ export default function BlogFeed() {
             .finally(() => setCreatingBlog(false));
     } else {
         // Create new blog
-        axios.post('http://localhost:5000/blog', blogData)
+        axios.post('https://purposespace-backend-b9ecfc575955.herokuapp.com/blog', blogData)
           .then(response => {
             if (response.data.status === "SUCCESS") {
               // Add the new blog to the list
@@ -243,7 +243,7 @@ export default function BlogFeed() {
   const handleDeleteBlog = (blogId) => {
     if (!window.confirm("Are you sure you want to delete this post?")) return;
     
-    axios.delete(`http://localhost:5000/blog/${blogId}`, { data: { userId: currentUserId } })
+    axios.delete(`https://purposespace-backend-b9ecfc575955.herokuapp.com/blog/${blogId}`, { data: { userId: currentUserId } })
         .then(res => {
             if (res.data.status === "SUCCESS") {
                 setBlogs(prev => prev.filter(b => b._id !== blogId));
@@ -292,7 +292,7 @@ export default function BlogFeed() {
       return;
     }
 
-    axios.post(`http://localhost:5000/blog/${blogId}/like`, { userId: currentUserId })
+    axios.post(`https://purposespace-backend-b9ecfc575955.herokuapp.com/blog/${blogId}/like`, { userId: currentUserId })
       .then(response => {
         if (response.data.status === "SUCCESS") {
           setBlogs(prevBlogs => prevBlogs.map(blog => 
@@ -315,7 +315,7 @@ export default function BlogFeed() {
 
     setCommentingOn(blogId);
 
-    axios.post(`http://localhost:5000/blog/${blogId}/comment`, {
+    axios.post(`https://purposespace-backend-b9ecfc575955.herokuapp.com/blog/${blogId}/comment`, {
       text: commentText,
       author: userData?.name || "Anonymous",
       userId: currentUserId
@@ -346,7 +346,7 @@ export default function BlogFeed() {
   const handleDeleteComment = (blogId, commentId) => {
     if (!window.confirm("Are you sure you want to delete this comment?")) return;
 
-    axios.delete(`http://localhost:5000/blog/${blogId}/comment/${commentId}`, {
+    axios.delete(`https://purposespace-backend-b9ecfc575955.herokuapp.com/blog/${blogId}/comment/${commentId}`, {
       data: { userId: currentUserId }
     })
     .then(response => {
@@ -365,7 +365,7 @@ export default function BlogFeed() {
   const handleEditComment = (blogId, commentId) => {
     if (!editInput.trim()) return;
 
-    axios.put(`http://localhost:5000/blog/${blogId}/comment/${commentId}`, {
+    axios.put(`https://purposespace-backend-b9ecfc575955.herokuapp.com/blog/${blogId}/comment/${commentId}`, {
       text: editInput,
       userId: currentUserId
     })
@@ -431,7 +431,7 @@ export default function BlogFeed() {
             <div className="flex items-center gap-3 group">
               <div className="relative">
                 <img
-                  src="/images/logo.png"
+                  src="images/logo.png"
                   alt="Purpose Space Logo"
                   className="h-10 w-10 sm:h-12 sm:w-12 rounded-full object-contain group-hover:scale-105 transition-transform duration-300"
                 />
@@ -472,7 +472,7 @@ export default function BlogFeed() {
                 className="lg:hidden flex items-center gap-2 p-2 rounded-lg hover:bg-green-50 transition-all duration-200 border border-green-200 bg-white/80"
               >
                 <img
-                  src="/images/vision.jpeg"
+                  src="images/vision.jpeg"
                   alt="Profile"
                   className="w-8 h-8 rounded-full object-cover border-2 border-green-300"
                 />
@@ -522,7 +522,7 @@ export default function BlogFeed() {
               {/* Profile Section */}
               <div className="p-6 text-center border-b border-green-100">
                 <img
-                  src="/images/vision.jpeg"
+                  src="images/vision.jpeg"
                   alt="User"
                   className="mx-auto rounded-full mb-3 border-4 border-green-200 w-20 h-20 object-cover"
                 />
@@ -851,7 +851,7 @@ export default function BlogFeed() {
                       >
                         <div className="flex items-center p-5 border-b border-green-50">
                           <img
-                            src="/images/vision2.jpg"
+                            src="images/vision2.jpg"
                             alt="Author"
                             className="rounded-full mr-4 border-2 border-green-200 w-12 h-12 object-cover"
                           />
@@ -1090,7 +1090,7 @@ export default function BlogFeed() {
             <div>
               <h4 className="font-semibold mb-4 text-green-700 text-base border-b border-green-100 pb-2">Sponsored</h4>
               <div className="rounded-xl overflow-hidden border border-green-200 hover:border-green-300 transition-colors duration-200">
-                <img src="/images/vision.jpeg" alt="Advertisement" className="w-full h-32 object-cover" />
+                <img src="images/vision.jpeg" alt="Advertisement" className="w-full h-32 object-cover" />
                 <div className="p-3 bg-green-50">
                   <p className="text-xs text-gray-600">Sponsored Content</p>
                 </div>

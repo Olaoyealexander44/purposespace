@@ -72,7 +72,7 @@ export default function AboutUs() {
               Welcome to <span className="text-[#4DAA57]">Purposespace</span>
             </h2>
             <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto">
-              Revolutionizing the rental experience in Nigeria through innovation, transparency, and trust.
+              Purpose is the place where your deep gladness meets the world’s deep need.
             </p>
           </motion.div>
 
@@ -84,7 +84,7 @@ export default function AboutUs() {
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-[#4DAA57] to-[#FFC73C] rounded-3xl blur-2xl opacity-20 scale-110"></div>
               <img
-                src="/images/aboutus-icon.jpg"
+                src="images/aboutus-icon.jpg"
                 alt="About Us"
                 className="relative w-full max-w-[700px] h-auto rounded-3xl shadow-3xl border-8 border-white/30"
               />
@@ -197,7 +197,7 @@ export default function AboutUs() {
                       <div className="absolute inset-0 bg-gradient-to-r from-[#4DAA57] to-[#FFC73C] rounded-full blur-2xl opacity-30 group-hover:opacity-50 transition-opacity duration-500 scale-110"></div>
                       <div className="relative p-1.5 bg-gradient-to-br from-[#4DAA57] to-[#FFC73C] rounded-full">
                         <img
-                          src="/images/teampic.png"
+                          src="images/teampic.png"
                           alt={member.name}
                           className="w-40 h-40 sm:w-56 sm:h-56 md:w-72 md:h-72 rounded-full object-cover border-4 border-white shadow-2xl group-hover:scale-105 transition-transform duration-500"
                         />

@@ -20,8 +20,8 @@ function Signup({ signupUser }) {
   const [fieldError, setFieldError] = useState("");
   
   const images = [
-    "/images/signupimage.jpg",
-    "/images/signupimage2.jpg"
+    "images/signupimage.jpg",
+    "images/signupimage2.jpg"
   ];
 
   useEffect(() => {
@@ -105,7 +105,7 @@ function Signup({ signupUser }) {
           <div className="text-center mb-8">
             <div className="flex justify-center mb-3">
               <img
-                src="/images/logo.png"
+                src="images/logo.png"
                 alt="PurposeSpace Logo"
                 className="w-16 h-16 object-contain"
               />

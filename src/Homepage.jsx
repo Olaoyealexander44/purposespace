@@ -930,7 +930,7 @@ export default function PurposeSpace() {
         <div className="relative z-10 flex flex-col items-center justify-center gap-3 sm:gap-4 md:gap-6 px-4 py-8 w-full max-w-4xl mx-auto">
           <div className="relative">
             <img
-              src="\images\logo.png"
+              src="images\logo.png"
               alt=""
               className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 object-contain relative z-10"
               style={{

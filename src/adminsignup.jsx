@@ -5,8 +5,7 @@ import { connect } from 'react-redux';
 import Loader from './loader.jsx';
 import { signupAdmin } from './../auth/actions/useractions';
 
-const localUrl = 'http://localhost:3000/';
-const currentUrl = localUrl;
+const currentUrl = 'https://olaoyealexander44.github.io/purposespace/';
 
 function Signup({ signupAdmin }) {
   const navigate = useNavigate();
@@ -21,8 +20,8 @@ function Signup({ signupAdmin }) {
   const [fieldError, setFieldError] = useState("");
   
   const images = [
-    "/images/signupimage.jpg",
-    "/images/signupimage2.jpg"
+    "images/signupimage.jpg",
+    "images/signupimage2.jpg"
   ];
 
   useEffect(() => {
@@ -106,7 +105,7 @@ function Signup({ signupAdmin }) {
           <div className="text-center mb-8">
             <div className="flex justify-center mb-3">
               <img
-                src="/images/logo.png"
+                src="images/logo.png"
                 alt="PurposeSpace Logo"
                 className="w-16 h-16 object-contain"
               />
