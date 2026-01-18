@@ -9,9 +9,9 @@ const ForgotPassword = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const redirectUrl = "http://localhost:5000/user/reset_password_page";
+    const redirectUrl = "https://purposespace-backend-b9ecfc575955.herokuapp.com/user/reset_password_page";
 
-    axios.post("http://localhost:5000/user/requestpasswordreset", {
+    axios.post("https://purposespace-backend-b9ecfc575955.herokuapp.com/user/requestpasswordreset", {
         email,
         redirectUrl
     })
