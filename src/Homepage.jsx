@@ -83,7 +83,7 @@ export default function PurposeSpace() {
   useEffect(() => {
     const fetchRecentBlogs = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/blog');
+        const response = await axios.get('https://purposespace-backend-b9ecfc575955.herokuapp.com/blog');
         if (response.data.status === "SUCCESS") {
           // Sort by createdAt descending (newest first)
           const sortedBlogs = response.data.data.sort((a, b) => 

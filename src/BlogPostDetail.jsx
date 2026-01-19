@@ -30,7 +30,7 @@ export default function BlogPostDetail() {
     // OR try to fetch single if supported.
     // Let's try fetching all for now as fallback if single fetch isn't guaranteed.
     // Actually, usually /blog returns all.
-    axios.get('http://localhost:5000/blog')
+    axios.get('https://purposespace-backend-b9ecfc575955.herokuapp.com/blog')
       .then(response => {
         if (response.data.status === "SUCCESS") {
           const foundBlog = response.data.data.find(b => b._id === id);
@@ -59,7 +59,7 @@ export default function BlogPostDetail() {
       return;
     }
 
-    axios.post(`http://localhost:5000/blog/${id}/like`, { userId: currentUserId })
+    axios.post(`https://purposespace-backend-b9ecfc575955.herokuapp.com/blog/${id}/like`, { userId: currentUserId })
       .then(response => {
         if (response.data.status === "SUCCESS") {
           setBlog(prev => ({ ...prev, likes: response.data.data.likes }));
@@ -87,7 +87,7 @@ export default function BlogPostDetail() {
         return;
     }
 
-    axios.post(`http://localhost:5000/blog/${id}/comment`, {
+    axios.post(`https://purposespace-backend-b9ecfc575955.herokuapp.com/blog/${id}/comment`, {
       text: commentInput,
       author: userData?.name || "Anonymous",
       userId: currentUserId
@@ -109,7 +109,7 @@ export default function BlogPostDetail() {
   const handleDeleteComment = (commentId) => {
     if (!window.confirm("Are you sure you want to delete this comment?")) return;
 
-    axios.delete(`http://localhost:5000/blog/${id}/comment/${commentId}`, {
+    axios.delete(`https://purposespace-backend-b9ecfc575955.herokuapp.com/blog/${id}/comment/${commentId}`, {
       data: { userId: currentUserId }
     })
     .then(response => {
@@ -123,7 +123,7 @@ export default function BlogPostDetail() {
   const handleEditComment = (commentId) => {
     if (!editInput.trim()) return;
 
-    axios.put(`http://localhost:5000/blog/${id}/comment/${commentId}`, {
+    axios.put(`https://purposespace-backend-b9ecfc575955.herokuapp.com/blog/${id}/comment/${commentId}`, {
       text: editInput,
       userId: currentUserId
     })
