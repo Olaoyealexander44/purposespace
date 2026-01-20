@@ -17,9 +17,9 @@ function Signin({ loginAdmin }) {
   const [fieldError, setFieldError] = useState("");
 
   const images = [
-    "images/signupimage.jpg",
-    "images/signupimage2.jpg"
-  ];
+    "/images/signupimage.jpg",
+    "/images/signupimage2.jpg"
+  ];];];
 
   useEffect(() => {
     const interval = setInterval(() => {

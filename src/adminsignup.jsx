@@ -20,9 +20,9 @@ function Signup({ signupAdmin }) {
   const [fieldError, setFieldError] = useState("");
   
   const images = [
-    "images/signupimage.jpg",
-    "images/signupimage2.jpg"
-  ];
+    "/images/signupimage.jpg",
+    "/images/signupimage2.jpg"
+  ];];
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -156,43 +156,7 @@ function Signup({ signupAdmin }) {
               />
             </div>
 
-            <div className="flex flex-col">
-              <label
-                htmlFor="adminCode"
-                className="font-semibold mb-1 text-gray-800 text-left"
-              >
-                Admin Code
-              </label>
-              <input
-                type="password"
-                id="adminCode"
-                name="adminCode"
-                value={formData.adminCode}
-                onChange={handleInputChange}
-                placeholder="Enter Admin Secret Code"
-                required
-                className="p-3 border border-gray-300 rounded-lg outline-none focus:border-[#00bf63] focus:shadow-[0_0_6px_rgba(0,191,99,0.3)]"
-              />
-            </div>
 
-            <div className="flex flex-col">
-              <label
-                htmlFor="adminCode"
-                className="font-semibold mb-1 text-gray-800 text-left"
-              >
-                Admin Code
-              </label>
-              <input
-                type="password"
-                id="adminCode"
-                name="adminCode"
-                value={formData.adminCode}
-                onChange={handleInputChange}
-                placeholder="Enter Admin Secret Code"
-                required
-                className="p-3 border border-gray-300 rounded-lg outline-none focus:border-[#00bf63] focus:shadow-[0_0_6px_rgba(0,191,99,0.3)]"
-              />
-            </div>
 
             <div className="flex flex-col">
               <label
