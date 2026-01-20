@@ -192,6 +192,14 @@ function Signin({ loginUser }) {
               Sign up
             </Link>
           </p>
+          <div className="text-center mt-6">
+            <Link
+              to="/adminsignin"
+              className="text-gray-500 text-sm hover:text-[#00bf63] hover:underline transition-colors"
+            >
+              Login as Admin
+            </Link>
+          </div>
         </div>
       </div>
     </div>
