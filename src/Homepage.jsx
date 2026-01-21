@@ -9,14 +9,14 @@ const initialBlogs = [
     author: "John Doe",
     time: "2 hours ago",
     text: "🚀 Unlock Your Peak Productivity: Master the Art of Deep Focus\n\nTransform your daily routine with scientifically-backed strategies that top performers swear by. From the revolutionary time-blocking method to creating distraction-free environments, discover how to reclaim your most productive hours. Join thousands who've already doubled their output while working fewer hours.",
-    img: "/images/vision.jpeg",
+    img: "images/vision.jpeg",
     url: "#",
   },
   {
     author: "Jane Smith",
     time: "Yesterday",
     text: "🌱 Superfoods Revolution: Fuel Your Body for Extraordinary Health\n\nUncover the secret weapons of nutrition that can dramatically transform your energy, immunity, and longevity. These powerhouse foods aren't just trendy – they're scientifically proven to optimize your body's natural healing processes. Ready to feel 10 years younger?",
-    img: "/images/vision.jpeg",
+    img: "images/vision.jpeg",
     url: "#",
   },
 ];
@@ -26,14 +26,14 @@ const moreBlogs = [
     author: "Mike Johnson",
     time: "3 days ago",
     text: "✈️ Europe on a Budget: Insider Secrets from a Seasoned Traveler\n\nDiscover the underground travel hacks that locals don't want tourists to know. From scoring €20 flights to finding authentic restaurants away from tourist traps, these battle-tested strategies will save you thousands. Your European adventure just got 10x more affordable and authentic.",
-    img: "/images/vision.jpeg",
+    img: "images/vision.jpeg",
     url: "#",
   },
   {
     author: "Sarah Lee",
     time: "1 week ago",
     text: "💪 Home Fitness Revolution: Build Your Dream Body Without a Gym\n\nNo equipment? No problem! Transform your living room into a personal fitness studio with these game-changing bodyweight exercises. From busy parents to remote workers, discover how 15 minutes a day can sculpt the physique you've always wanted. Your excuses just ran out of room.",
-    img: "/images/vision.jpeg",
+    img: "images/vision.jpeg",
     url: "#",
   },
 ];
@@ -53,9 +53,26 @@ const transformBlogData = (blogData) => {
     const wordCount = blog.text.split(' ').length;
     const readTime = Math.max(1, Math.ceil(wordCount / 200)) + ' min read';
 
+    // Handle image source: prioritize blog.img, fallback to first image in images array, then default
+    let image = blog.img;
+    if (!image && blog.images && blog.images.length > 0) {
+      image = blog.images[0];
+    }
+    
+    // Fix relative paths for GitHub Pages
+    if (!image) {
+      image = `${import.meta.env.BASE_URL}images/vision.jpeg`;
+    } else if (typeof image === 'string') {
+      if (image.startsWith('/images/')) {
+        image = `${import.meta.env.BASE_URL}${image.substring(1)}`;
+      } else if (image.startsWith('images/')) {
+        image = `${import.meta.env.BASE_URL}${image}`;
+      }
+    }
+
     return {
       id: index + 1,
-      image: blog.img,
+      image: image,
       title: title,
       description: description,
       readTime: readTime,
@@ -291,12 +308,13 @@ export default function PurposeSpace() {
   // Fetch dynamic stories
   useEffect(() => {
     // Fetch Life Changing Stories
-    axios.get('http://localhost:5000/lifeChangingStory')
+    axios.get('https://purposespace-backend-b9ecfc575955.herokuapp.com/lifeChangingStory')
       .then(res => {
         if (res.data.status === "SUCCESS") {
            setSpotlightStories(prev => {
              const staticStories = [
                 {
+                  id: 'static-1',
                   type: 'picture',
                   media: 'images/precious.jpeg',
                   title: 'Community Transformation',
@@ -304,6 +322,7 @@ export default function PurposeSpace() {
                   readTime: '4 min read'
                 },
                 {
+                  id: 'static-2',
                   type: 'video',
                   media: 'images/precious.jpeg',
                   poster: 'images/precious.jpeg',
@@ -312,6 +331,7 @@ export default function PurposeSpace() {
                   readTime: '6 min watch'
                 },
                 {
+                  id: 'static-3',
                   type: 'picture',
                   media: 'images/precious.jpeg',
                   title: 'Educational Impact',
@@ -319,6 +339,7 @@ export default function PurposeSpace() {
                   readTime: '5 min read'
                 },
                 {
+                  id: 'static-4',
                   type: 'video',
                   media: 'images/vision2.jpg',
                   poster: 'images/precious.jpeg',
@@ -334,7 +355,7 @@ export default function PurposeSpace() {
       .catch(err => console.error("Error fetching stories:", err));
 
       // Fetch Success Stories
-      axios.get('http://localhost:5000/successStory')
+      axios.get('https://purposespace-backend-b9ecfc575955.herokuapp.com/successStory')
       .then(res => {
         if (res.data.status === "SUCCESS") {
            setSuccessStories(prev => [...res.data.data, ...prev]);
@@ -343,7 +364,7 @@ export default function PurposeSpace() {
       .catch(err => console.error("Error fetching success stories:", err));
 
       // Fetch Men of Excellence
-      axios.get('http://localhost:5000/menOfExcellence')
+      axios.get('https://purposespace-backend-b9ecfc575955.herokuapp.com/menOfExcellence')
       .then(res => {
         if (res.data.status === "SUCCESS") {
            setMenOfExcellence(prev => [...res.data.data, ...prev]);
@@ -383,7 +404,7 @@ export default function PurposeSpace() {
     setIsUploading(true);
     try {
       const userData = JSON.parse(localStorage.getItem('userData'));
-      const response = await axios.post('http://localhost:5000/successStory', {
+      const response = await axios.post('https://purposespace-backend-b9ecfc575955.herokuapp.com/successStory', {
         ...newSuccessStory,
         userId: userData._id
       });
@@ -404,9 +425,16 @@ export default function PurposeSpace() {
 
   const handleDeleteSuccessStory = async (id) => {
     if (!window.confirm("Are you sure you want to delete this story?")) return;
+
+    // If it's a static story (number ID or explicitly marked static), just remove from state
+    if (typeof id === 'number' || (typeof id === 'string' && !id.match(/^[0-9a-fA-F]{24}$/))) {
+      setSuccessStories(prev => prev.filter(s => (s._id || s.id) !== id));
+      return;
+    }
+
     try {
       const userData = JSON.parse(localStorage.getItem('userData'));
-      const response = await axios.delete(`http://localhost:5000/successStory/${id}`, {
+      const response = await axios.delete(`https://purposespace-backend-b9ecfc575955.herokuapp.com/successStory/${id}`, {
         data: { userId: userData._id }
       });
       if (response.data.status === "SUCCESS") {
@@ -429,7 +457,7 @@ export default function PurposeSpace() {
     setIsUploading(true);
     try {
       const userData = JSON.parse(localStorage.getItem('userData'));
-      const response = await axios.post('http://localhost:5000/menOfExcellence', {
+      const response = await axios.post('https://purposespace-backend-b9ecfc575955.herokuapp.com/menOfExcellence', {
         ...newExcellence,
         userId: userData._id
       });
@@ -450,9 +478,16 @@ export default function PurposeSpace() {
 
   const handleDeleteExcellence = async (id) => {
     if (!window.confirm("Are you sure you want to delete this item?")) return;
+
+    // Local delete for static items
+    if (typeof id === 'number' || (typeof id === 'string' && !id.match(/^[0-9a-fA-F]{24}$/))) {
+      setMenOfExcellence(prev => prev.filter(m => (m._id || m.id) !== id));
+      return;
+    }
+
     try {
       const userData = JSON.parse(localStorage.getItem('userData'));
-      const response = await axios.delete(`http://localhost:5000/menOfExcellence/${id}`, {
+      const response = await axios.delete(`https://purposespace-backend-b9ecfc575955.herokuapp.com/menOfExcellence/${id}`, {
         data: { userId: userData._id }
       });
       if (response.data.status === "SUCCESS") {
@@ -487,7 +522,7 @@ export default function PurposeSpace() {
     setIsUploading(true);
     try {
       const userData = JSON.parse(localStorage.getItem('userData'));
-      const response = await axios.post('http://localhost:5000/lifeChangingStory', {
+      const response = await axios.post('https://purposespace-backend-b9ecfc575955.herokuapp.com/lifeChangingStory', {
         ...newStory,
         userId: userData._id
       });
@@ -510,9 +545,15 @@ export default function PurposeSpace() {
   const handleDeleteStory = async (id) => {
     if (!window.confirm("Are you sure you want to delete this story?")) return;
     
+    // Local delete for static stories
+    if (typeof id === 'string' && id.startsWith('static-')) {
+      setSpotlightStories(prev => prev.filter(story => (story._id || story.id) !== id));
+      return;
+    }
+
     try {
       const userData = JSON.parse(localStorage.getItem('userData'));
-      const response = await axios.delete(`http://localhost:5000/lifeChangingStory/${id}`, {
+      const response = await axios.delete(`https://purposespace-backend-b9ecfc575955.herokuapp.com/lifeChangingStory/${id}`, {
         data: { userId: userData._id }
       });
 
@@ -675,7 +716,7 @@ export default function PurposeSpace() {
           <div className="flex items-center gap-3 group">
             <div className="relative">
               <img
-                src="images\logo.png"
+                src={`${import.meta.env.BASE_URL}images/logo.png`}
                 alt="Purpose Space Logo"
                 className="h-12 w-12 sm:h-14 sm:w-14 rounded-full object-contain filter brightness-110 group-hover:scale-105 transition-transform duration-300"
               />
@@ -924,13 +965,13 @@ export default function PurposeSpace() {
       <section
         id="home"
         className="relative flex flex-col items-center justify-center text-center min-h-[40vh] sm:min-h-[80vh] lg:min-h-screen bg-cover bg-center"
-        style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1588776814546-ec69a8b81970?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200")' }}
+        style={{ backgroundImage: `url(${import.meta.env.BASE_URL}images/img1.jpeg)` }}
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-green-500/60 via-yellow-300/40 to-purple-500/40 z-0"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-green-500/40 via-yellow-300/20 to-purple-500/20 z-0"></div>
         <div className="relative z-10 flex flex-col items-center justify-center gap-3 sm:gap-4 md:gap-6 px-4 py-8 w-full max-w-4xl mx-auto">
           <div className="relative">
             <img
-              src="images\logo.png"
+              src={`${import.meta.env.BASE_URL}images/logo.png`}
               alt=""
               className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 object-contain relative z-10"
               style={{
@@ -1497,9 +1538,9 @@ export default function PurposeSpace() {
             >
               {spotlightStories.map((story, idx) => (
                 <div key={idx} className="relative bg-white rounded-xl overflow-hidden h-[350px] sm:h-[400px] w-[250px] sm:w-[300px] flex-shrink-0 flex flex-col justify-end text-white shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 group">
-                  {currentUser && story._id && (currentUser.role === 'admin' || currentUser._id === story.userId) && (
+                  {currentUser && (currentUser.role === 'admin' || (story._id && currentUser._id === story.userId)) && (
                     <button
-                      onClick={(e) => { e.stopPropagation(); handleDeleteStory(story._id); }}
+                      onClick={(e) => { e.stopPropagation(); handleDeleteStory(story._id || story.id); }}
                       className="absolute top-2 right-2 z-20 bg-red-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-red-600"
                       title="Delete Story"
                     >
@@ -1628,9 +1669,9 @@ export default function PurposeSpace() {
                 {successStories.map((story, idx) => (
                   <div key={story.id} className="w-full flex-shrink-0 animate-slide-in relative">
                     <div className="bg-gradient-to-br from-white via-gray-50 to-green-50 rounded-2xl shadow-2xl overflow-hidden border border-gray-100 hover:shadow-3xl hover:scale-[1.02] transition-all duration-500 hover:border-green-300 group">
-                      {currentUser && story._id && (currentUser.role === 'admin' || currentUser._id === story.userId) && (
+                      {currentUser && (currentUser.role === 'admin' || (story._id && currentUser._id === story.userId)) && (
                         <button
-                          onClick={(e) => { e.stopPropagation(); handleDeleteSuccessStory(story._id); }}
+                          onClick={(e) => { e.stopPropagation(); handleDeleteSuccessStory(story._id || story.id); }}
                           className="absolute top-2 right-2 z-20 bg-red-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-red-600"
                           title="Delete Story"
                         >
@@ -1788,9 +1829,9 @@ export default function PurposeSpace() {
                     className="w-full flex-shrink-0 px-2"
                   >
                     <div className="group relative bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-green-100/50 mx-auto max-w-sm">
-                      {currentUser && person._id && (currentUser.role === 'admin' || currentUser._id === person.userId) && (
+                      {currentUser && (currentUser.role === 'admin' || (person._id && currentUser._id === person.userId)) && (
                         <button
-                          onClick={(e) => { e.stopPropagation(); handleDeleteExcellence(person._id); }}
+                          onClick={(e) => { e.stopPropagation(); handleDeleteExcellence(person._id || person.id); }}
                           className="absolute top-2 right-2 z-20 bg-red-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-red-600"
                           title="Delete Story"
                         >
@@ -1917,9 +1958,9 @@ export default function PurposeSpace() {
                 className="group relative bg-white/80 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 border border-green-100/50 hover:border-green-200"
                 style={{ animationDelay: `${index * 0.2}s` }}
               >
-                {currentUser && person._id && (currentUser.role === 'admin' || currentUser._id === person.userId) && (
+                {currentUser && (currentUser.role === 'admin' || (person._id && currentUser._id === person.userId)) && (
                   <button
-                    onClick={(e) => { e.stopPropagation(); handleDeleteExcellence(person._id); }}
+                    onClick={(e) => { e.stopPropagation(); handleDeleteExcellence(person._id || person.id); }}
                     className="absolute top-4 right-4 z-30 bg-red-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-red-600"
                     title="Delete Story"
                   >

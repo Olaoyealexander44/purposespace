@@ -35,7 +35,7 @@ export default function BlogFeed() {
     return saved ? JSON.parse(saved) : {
       name: "Olaoye Alexander",
       title: "Nursing Officer & Blogger",
-      image: "images/vision.jpeg"
+      image: `${import.meta.env.BASE_URL}images/vision.jpeg`
     };
   });
   const [showProfileEdit, setShowProfileEdit] = useState(false);
@@ -59,11 +59,37 @@ export default function BlogFeed() {
     axios.get('https://purposespace-backend-b9ecfc575955.herokuapp.com/blog')
       .then(response => {
         if (response.data.status === "SUCCESS") {
-          const formattedBlogs = response.data.data.map(blog => ({
-            ...blog,
-            time: new Date(blog.createdAt).toLocaleDateString(),
-            url: blog.url || '#'
-          }));
+          const formattedBlogs = response.data.data.map(blog => {
+            // Handle image paths
+            let image = blog.img;
+            if (!image && blog.images && blog.images.length > 0) {
+              image = blog.images[0];
+            }
+            
+            if (image && typeof image === 'string') {
+              if (image.startsWith('/images/')) {
+                image = `${import.meta.env.BASE_URL}${image.substring(1)}`;
+              } else if (image.startsWith('images/')) {
+                image = `${import.meta.env.BASE_URL}${image}`;
+              }
+            }
+
+            const images = blog.images ? blog.images.map(img => {
+                if (typeof img === 'string') {
+                   if (img.startsWith('/images/')) return `${import.meta.env.BASE_URL}${img.substring(1)}`;
+                   if (img.startsWith('images/')) return `${import.meta.env.BASE_URL}${img}`;
+                }
+                return img;
+            }) : [];
+
+            return {
+              ...blog,
+              img: image,
+              images: images,
+              time: new Date(blog.createdAt).toLocaleDateString(),
+              url: blog.url || '#'
+            };
+          });
           setBlogs(formattedBlogs);
         }
         setLoading(false);
@@ -431,7 +457,7 @@ export default function BlogFeed() {
             <div className="flex items-center gap-3 group">
               <div className="relative">
                 <img
-                  src="images/logo.png"
+                  src={`${import.meta.env.BASE_URL}images/logo.png`}
                   alt="Purpose Space Logo"
                   className="h-10 w-10 sm:h-12 sm:w-12 rounded-full object-contain group-hover:scale-105 transition-transform duration-300"
                 />
@@ -472,7 +498,7 @@ export default function BlogFeed() {
                 className="lg:hidden flex items-center gap-2 p-2 rounded-lg hover:bg-green-50 transition-all duration-200 border border-green-200 bg-white/80"
               >
                 <img
-                  src="images/vision.jpeg"
+                  src={`${import.meta.env.BASE_URL}images/vision.jpeg`}
                   alt="Profile"
                   className="w-8 h-8 rounded-full object-cover border-2 border-green-300"
                 />
@@ -851,7 +877,7 @@ export default function BlogFeed() {
                       >
                         <div className="flex items-center p-5 border-b border-green-50">
                           <img
-                            src="images/vision2.jpg"
+                            src={`${import.meta.env.BASE_URL}images/vision2.jpg`}
                             alt="Author"
                             className="rounded-full mr-4 border-2 border-green-200 w-12 h-12 object-cover"
                           />

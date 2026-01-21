@@ -17,9 +17,9 @@ function Signin({ loginAdmin }) {
   const [fieldError, setFieldError] = useState("");
 
   const images = [
-    "/images/signupimage.jpg",
-    "/images/signupimage2.jpg"
-  ];];];
+    `${import.meta.env.BASE_URL}images/signupimage.jpg`,
+    `${import.meta.env.BASE_URL}images/signupimage2.jpg`
+  ];
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -101,7 +101,7 @@ function Signin({ loginAdmin }) {
           <div className="text-center mb-8">
             <div className="flex justify-center mb-3">
               <img
-                src="images/logo.png"
+                src={`${import.meta.env.BASE_URL}images/logo.png`}
                 alt="PurposeSpace Logo"
                 className="w-16 h-16 object-contain"
               />

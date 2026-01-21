@@ -35,8 +35,32 @@ export default function BlogPostDetail() {
         if (response.data.status === "SUCCESS") {
           const foundBlog = response.data.data.find(b => b._id === id);
           if (foundBlog) {
+            // Handle image paths
+            let image = foundBlog.img;
+            if (!image && foundBlog.images && foundBlog.images.length > 0) {
+              image = foundBlog.images[0];
+            }
+            
+            if (image && typeof image === 'string') {
+              if (image.startsWith('/images/')) {
+                image = `${import.meta.env.BASE_URL}${image.substring(1)}`;
+              } else if (image.startsWith('images/')) {
+                image = `${import.meta.env.BASE_URL}${image}`;
+              }
+            }
+
+            const images = foundBlog.images ? foundBlog.images.map(img => {
+                if (typeof img === 'string') {
+                   if (img.startsWith('/images/')) return `${import.meta.env.BASE_URL}${img.substring(1)}`;
+                   if (img.startsWith('images/')) return `${import.meta.env.BASE_URL}${img}`;
+                }
+                return img;
+            }) : [];
+
             setBlog({
               ...foundBlog,
+              img: image,
+              images: images,
               time: new Date(foundBlog.createdAt).toLocaleDateString(),
               url: foundBlog.url || '#'
             });
@@ -174,7 +198,7 @@ export default function BlogPostDetail() {
         <article className="bg-white rounded-2xl shadow-xl overflow-hidden border border-green-100">
           <div className="flex items-center p-6 border-b border-green-50">
             <img
-              src="/images/vision2.jpg"
+              src={`${import.meta.env.BASE_URL}images/vision2.jpg`}
               alt="Author"
               className="rounded-full mr-4 border-2 border-green-200 w-14 h-14 object-cover"
             />
